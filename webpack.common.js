@@ -2,7 +2,6 @@ const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
 const HtmlPlugin = require('html-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
-const tailwindcss = require('tailwindcss')
 const autoprefixer = require('autoprefixer')
 
 module.exports = {
@@ -10,7 +9,8 @@ module.exports = {
         popup: path.resolve('src/popup/popup.tsx'),
         options: path.resolve('src/options/options.tsx'),
         background: path.resolve('src/background/background.ts'),
-        contentScript: path.resolve('src/contentScript/contentScript.ts')
+        contentScript: path.resolve('src/contentScript/contentScript.ts'),
+        AppWrapper: path.resolve('src/components/AppWrapper.tsx')
     },
     module: {
         rules: [
@@ -29,15 +29,15 @@ module.exports = {
                           importLoaders: 1,
                         },
                     },
-                    {
-                    loader: 'postcss-loader', // postcss loader needed for tailwindcss
-                    options: {
-                      postcssOptions: {
-                        ident: 'postcss',
-                        plugins: [tailwindcss, autoprefixer],
-                      },
-                    },
-                },
+                //    {
+                //     loader: 'postcss-loader', // postcss loader needed for tailwindcss
+                //     options: {
+                //       postcssOptions: {
+                //         ident: 'postcss',
+                //         plugins: [tailwindcss, autoprefixer],
+                //       },
+                //     },
+                // },
               ],
             },
             {
@@ -57,8 +57,8 @@ module.exports = {
             }]
         }),
         ...getHtmlPlugins([
-            'popup',
             'options',
+            'popup'
         ])
     ],
     resolve: {
@@ -69,9 +69,10 @@ module.exports = {
         path: path.join(__dirname, 'dist')
     },
     optimization: {
-        splitChunks: {
-            chunks: 'all',
-        }
+        // splitChunks: {
+        //     chunks: 'all',
+        // }
+        runtimeChunk: false
     }
 }
 

@@ -21,10 +21,9 @@ const theme = createTheme({
     }
   })
   
-const Test = () => {
+const Login = () => {
         const [email, setEmail] = React.useState("");
         const [password, setPassword] = React.useState("");
-        
         axios.defaults.baseURL = "http://localhost:5001/twizzly-application/us-central1/api"
 
         const handleSubmit = async(event) => {
@@ -38,7 +37,7 @@ const Test = () => {
 
                 let response = await axios.post('/login', userData);
                 const message = {
-                    id: "SaveCredentialsOnStartup",
+                    id: "SaveCredentials",
                     credentials: {
                         email: userData.email,
                         password: userData.password
@@ -47,10 +46,12 @@ const Test = () => {
                 console.log(response);
                 
                 
-                chrome.runtime.sendMessage(message, {}, (token) => {
-                    console.log(token);
-                    console.log("Do Something here");
+                chrome.runtime.sendMessage(message, (chromeResponse) => {
+                    console.log(chromeResponse)
                 });
+                chrome.action.setBadgeText({
+                    text: "ON",
+                });;
                 
                 //May not Need This.
                 let token = response.data.token; 
@@ -63,14 +64,7 @@ const Test = () => {
                 console.log(error.response)
             }
         }
-        
-        /*         useEffect(() => {
-            chrome.action.getBadgeText((badge) => {
-                if(badge !== "OFF"){
-                    setLoggedIn(true);
-                }
-            })
-        }, []) */
+
 
     return(
         <ThemeProvider theme={theme}>
@@ -108,8 +102,4 @@ const Test = () => {
         );
 }
 
-
-const container = document.createElement('div')
-document.body.appendChild(container)
-const root = createRoot(container)
-root.render(<Test/>)
+export default Login; 

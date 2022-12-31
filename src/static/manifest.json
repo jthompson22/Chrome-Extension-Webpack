@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
-    "name": "react-boilerplate",
-    "description": "react-boilerplate for chrome extension",
+    "name": "Share The Web",
+    "description": "Agnostic Sharing",
     "version": "1.0.0",
     "action" : {
         "default_popup": "popup.html",
@@ -15,12 +15,24 @@
     },
     "options_page": "options.html",
     "background": {
-        "service_worker": "background.js"
+        "service_worker": "background.js",
+        "type": "module"
     },
     "content_scripts": [
         {
             "matches": ["<all_urls>"],
-            "js": ["contentScript.js"]
+            "js": ["contentScript.js", "AppWrapper.js"],
+            "type": "module"
         }
-    ]
+    ],
+    "permissions": ["activeTab", "scripting", "storage"],
+    "commands": {
+        "toggle_search":{
+            "suggested_key":{
+                "default": "Ctrl+M",
+                "mac": "Command+U"
+            },
+            "description": "Toggles the React app"
+        }
+      }
 }

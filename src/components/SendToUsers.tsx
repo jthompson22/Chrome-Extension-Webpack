@@ -1,11 +1,13 @@
 import React, {useState} from 'react'
-import {TextField, DialogContent, DialogTitle, InputAdornment, Button, Dialog} from '@mui/material';
+import {TextField, DialogContent, DialogTitle, InputAdornment, Button, Dialog, List, ListItem, ListItemButton, ListItemText} from '@mui/material';
 import SendTwoToneIcon from '@mui/icons-material/SendTwoTone';
 import SearchTwoToneIcon from '@mui/icons-material/SearchTwoTone';
 
 
-const SendToUsers = ({handleSubmit, openModal, refContext} : any) => {
+const SendToUsers = ({handleSubmit, openModal, refContext, friends} : any) => {
     const [to, setTo] = useState("");
+    const [filterList, setFilterList] = useState([]);
+
     const [body, setBody] = useState("");
 
     const dialogStyle = {
@@ -29,6 +31,28 @@ const SendToUsers = ({handleSubmit, openModal, refContext} : any) => {
         }
       };
 
+    const listStyles = {
+        position: 'absolute',
+        zIndex: '9999999999999',
+        border: "2px solid #DEDEDE",
+        backgroundColor: "white",
+        borderRadius: '15px'
+    };
+
+    const handleToQueryChange = (e) => {
+        const results = friends.filter(friend => {
+            if (e.target.value === "") return friends;
+            return friend.toLowerCase().includes(e.target.value.toLowerCase());
+        })
+        setTo(e.target.value);
+        setFilterList(results);
+    }
+    
+    const handleListItemClick = (friend) => {
+        setTo(friend);
+        setFilterList([]);
+    }
+
     return (
         <Dialog open={openModal} sx={{dialogStyle}}>
             <div ref={refContext}>
@@ -40,7 +64,7 @@ const SendToUsers = ({handleSubmit, openModal, refContext} : any) => {
                     label="To: User Handle..."
                     fullWidth
                     value={to}
-                    onChange={(e) => (setTo(e.target.value))}
+                    onChange={handleToQueryChange}
                     variant="standard" 
                     id="standard-basic"                   
                     InputProps={{
@@ -51,6 +75,24 @@ const SendToUsers = ({handleSubmit, openModal, refContext} : any) => {
                             )
                         }}
                     />
+                    {
+                        (to !== "" && filterList.length > 0) && 
+                        <List sx={listStyles}>
+                            {
+                                filterList.map(friend => {
+                                        console.log(friend)
+                                        return (
+                                        <ListItem id={friend} key={friend}> 
+                                            <ListItemButton onClick={() => handleListItemClick(friend)}>
+                                                <ListItemText> 
+                                                    {friend}
+                                                </ListItemText>
+                                            </ListItemButton>
+                                        </ListItem>)
+                                })
+                            }
+                        </List>
+                    }
                     <TextField sx={textFieldStyle}
                         multiline
                         id="standard-basic"

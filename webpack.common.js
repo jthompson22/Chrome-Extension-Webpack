@@ -6,7 +6,7 @@ const autoprefixer = require('autoprefixer')
 
 module.exports = {
     entry: {
-        popup: path.resolve('src/popup/popup.tsx'),
+        login: path.resolve('src/login/LoginAction.tsx'),
         options: path.resolve('src/options/options.tsx'),
         background: path.resolve('src/background/background.ts'),
         contentScript: path.resolve('src/contentScript/contentScript.ts'),
@@ -58,7 +58,7 @@ module.exports = {
         }),
         ...getHtmlPlugins([
             'options',
-            'popup'
+            'login'
         ])
     ],
     resolve: {

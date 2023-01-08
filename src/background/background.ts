@@ -1,50 +1,20 @@
 import axios from 'axios';
 import fetchAdaptor from '@vespaiach/axios-fetch-adapter'; 
 import jwtDecode from 'jwt-decode'; 
-//SETUP
+var events = require('events');
+var eventEmitter = new events.EventEmitter();
 
+//SETUP
 const axiosInstance = axios.create({
     baseURL: 'http://localhost:5001/twizzly-application/us-central1/api',
     adapter: fetchAdaptor
 })
+let friends = [];
 
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-    console.log(msg.id);
-    console.log(sender);
-    switch(msg.id){
-        case "SaveCredentialsOnStartup":
-            console.log("Saving Credentials")
-            chrome.storage.local.set({"Email": msg.credentials.email, "Password": msg.credentials.password}).then(() => chrome.action.setBadgeText({text: "ON"})).then(() => {
-                GetCredentialsAdmin(); 
-            }).then((token)=>{
-                setAuthorizationHeader(token);
-                sendResponse("Set Token Successfully");
-            });
-            return true; 
-        case "LoadBearerToken":
-            console.log("Loading Token")
-            GetCredentialsAdmin().then((token) => {
-                if(token){
-                    setAuthorizationHeader(token);
-                    sendResponse("Load Token Successfully");
-                }else{
-                    sendResponse('User needs to login in.');
-                    //Add tool tip here for user to login.
-                } 
-            }); 
-            return true
-        case "PostSharedLink":
-            console.log("Posting")
-            const messageBody = {...msg.body, url: sender.url}
-            postSharedLink(messageBody).then((success)=> {
-                sendResponse(success);
-            })
-            return true; 
-        default:
-            sendResponse("Front the background Script");   
-    }
-})
 
+
+
+//LOGGED IN USER ACTIONS
 async function postSharedLink(message){
     try{
         const response = await axiosInstance.post('/sharelink', message);
@@ -55,7 +25,24 @@ async function postSharedLink(message){
     }
 }
 
+async function SetFriends(){
+    try{
+        const response = await axiosInstance.get('/getFriends');
+        friends = response.data.friends 
+    }catch(error){
+        console.log(error.response.data)
+    }
+}
+async function GetAndSetNotifications(){
+    try{
+        const response = await axiosInstance.get('/getNotifications');
+        return String(response.data.notifications.length); 
+    }catch(error){
+        console.log(error.response.data)
+    }
+}
 
+//AUTHORIZATION USER ACTIONS
 function setAuthorizationHeader(token){;
     const TAppIdToken = `Bearer ${token}`;
     axiosInstance.defaults.headers.common['Authorization'] = TAppIdToken;//In this instance use Axios global and set the header;
@@ -63,25 +50,34 @@ function setAuthorizationHeader(token){;
 
 async function GetCredentialsAdmin(){
     try{
-        const TAppIdToken = (await chrome.storage.local.get(["TAppIdToken"])).TAppIdToken;
-        if(TAppIdToken){
-            let decoded: any = jwtDecode(TAppIdToken)
-            if(decoded.exp *1000 < Date.now()){
-                return await getLoginBearerToken(); 
-            }else{
-                return TAppIdToken; //optionally added Bearer here
-            }
+        //background has not gone idle
+        if(axiosInstance.defaults.headers.common['Authorization']){
+            return true; 
         }else{
-            return await getLoginBearerToken(); 
+            const TAppIdToken = (await chrome.storage.local.get(["TAppIdToken"])).TAppIdToken;
+            if(TAppIdToken){
+                let decoded: any = jwtDecode(TAppIdToken)
+                if(decoded.exp *1000 < Date.now()){
+                    let token = await getLoginBearerToken();
+                    return token ? (setAuthorizationHeader(token), true) : false
+                }else{
+                    //App token is good
+                    return true
+                }
+            }else{
+                let token = await getLoginBearerToken();
+                return token ? (setAuthorizationHeader(token), true) : false
+            }
         }
     }catch(error){
         console.log(error);
+        return false;
     }
 }
 
 async function getLoginBearerToken(){
     try{
-    console.log("Getting Bearer")
+    console.log("Getting Bearer By Login")
     const email = (await chrome.storage.local.get(["Email"])).Email;
     const password = (await chrome.storage.local.get(["Password"])).Password;
     if(email && password){
@@ -89,20 +85,112 @@ async function getLoginBearerToken(){
         await chrome.storage.local.set({"TAppIdToken": response.data.token});
         return response.data.token;
     }else{
-        await chrome.action.setBadgeText({
-            text: "OFF",
-        });
+        await SetBadgeText("OFF");
         return false; 
     }
     }catch(error){
         console.log(error)
+        return false;
     }
 }
 
 
-chrome.runtime.onInstalled.addListener(() => {
-    //Add getter here since it happens on page reload.
-    chrome.action.setBadgeText({
-        text: "OFF",
-    });
+async function SetBadgeText(on){
+    if(on==="ON"){
+        chrome.action.setBadgeText({text: ""}, ()=>{
+            chrome.alarms.create(
+                "GetNotifications",
+                {periodInMinutes: 2, when: Date.now()}
+            )
+        })
+    }else{
+        chrome.action.setBadgeText({text: "OFF"})
+    }
+}
+
+
+//EVENT LISTENERS
+chrome.action.onClicked.addListener(async (tab) => {
+    // Retrieve the action badge to check if the extension is 'ON' or 'OFF'
+    const state = await chrome.action.getBadgeText({ tabId: tab.id });
+    // Next state will always be the opposite
+    if(state === "OFF"){
+        await chrome.scripting.executeScript({
+            files: ["login.js"],
+            target: { tabId: tab.id },
+            });
+    }else{
+        chrome.tabs.update({url: "http://localhost:3000/"});
+    } 
 });
+
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    switch(msg.id){
+        case "SaveCredentialsOnLogin":
+            console.log("Saving Credentials")
+            chrome.storage.local.set({"Email": msg.credentials.email, "Password": msg.credentials.password}).then(() => GetCredentialsAdmin()).then((tokenIsSet)=>{
+                if(tokenIsSet){
+                    console.log("Dispatching Logged in event!");
+                    SetBadgeText("ON");
+                    eventEmitter.emit('LoggedIn')
+                    sendResponse(tokenIsSet);
+                }else{
+                    console.log("Uh oh, something went wrong")
+                    sendResponse(tokenIsSet);
+                }
+                
+                return true; 
+            });
+            return true; 
+        case "LoadBearerToken":
+            console.log("Loading Token")
+            GetCredentialsAdmin().then((tokenIsSet) => {
+                sendResponse(tokenIsSet)                
+            }); 
+            return true
+        case "PostSharedLink":
+            console.log("Posting")
+            const messageBody = {...msg.body, url: sender.url}
+            postSharedLink(messageBody).then((success)=> {
+                sendResponse(success);
+            })
+            return true; 
+        case "GetFriends":
+            console.log("Getting Friends")
+            if(friends.length === 0){
+                SetFriends().then(()=> {
+                    console.log("Got friends from API:")
+                    sendResponse(friends)
+                })
+            }else{
+                console.log("Got friends from Local")
+                sendResponse(friends)
+            }
+            return true; 
+        case "SetupLoginListener":
+            console.log("Not logged in setting up login listener...")
+            eventEmitter.on('LoggedIn', () => sendResponse())
+            return true; 
+        default:
+            sendResponse("Front the background Script");   
+    }
+})
+
+chrome.alarms.onAlarm.addListener(async (alarm)=>{
+    if(alarm.name === "GetNotifications"){
+        let notifications  = await GetAndSetNotifications()
+        if(notifications){
+            chrome.action.setBadgeText({text: notifications})
+        }
+    }
+})
+
+chrome.runtime.onInstalled.addListener(async (tab) => {
+    // Retrieve the action badge to check if the extension is 'ON' or 'OFF'
+    const email = (await chrome.storage.local.get(["Email"])).Email;
+    const password = (await chrome.storage.local.get(["Password"])).Password;
+    if(!email && !password){
+        SetBadgeText("OFF"); 
+    }
+});
+

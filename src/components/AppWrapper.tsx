@@ -1,6 +1,6 @@
 import React, {useState, useEffect, useRef} from 'react';
 //import axios from 'axios';
-//import Login from '../components/Login'
+import Login from './Login'
 import { createRoot } from 'react-dom/client'
 //import jwtDecode from "jwt-decode";
 import SendToUsers from './SendToUsers';
@@ -10,9 +10,7 @@ import {Snackbar} from '@mui/material';
 function useOutsideAlerter(ref, setOpen) {
     console.log("useOutsideAlerter");
     useEffect(() => {
-        console.log("OUTSIDE - EFFECT");
         function handleClickOutside(event) {
-            console.log("OUTSIDE - CLICK");
             if (ref.current && !ref.current.contains(event.target)) {
                 // eslint-disable-next-line no-restricted-globals
                 console.log("FALSE");
@@ -32,6 +30,8 @@ const AppWrapper = () => {
     useOutsideAlerter(wrapperRef, setOpen)
     const [snack, setSnackBar] = useState(false);
     const [snackError, setSnackError] = useState(false);
+    const [friends, setFriends] = useState([]);
+    const [loggedIn, setLoggedIn] = useState(false);
 
     const handleSubmit = (to, body) => {
         console.log("firing");
@@ -73,10 +73,36 @@ const AppWrapper = () => {
         }
     }, [open])
     
+    useEffect(()=>{
+        //Load Bearer Token Upon Every Page
+        chrome.runtime.sendMessage({id: "LoadBearerToken"}, {}, (token) => {
+            //We know we're logged in, go get friends;
+            console.log("Token", token)
+            if(token){
+                setLoggedIn(true);
+                chrome.runtime.sendMessage({id: "GetFriends"}, {}, (friends) => {
+                    console.log(friends);
+                    setFriends(friends);
+                })
+            }else{
+                chrome.runtime.sendMessage({id: "SetupLoginListener"}, {}, () => {
+                    setLoggedIn(true);
+                    chrome.runtime.sendMessage({id: "GetFriends"}, {}, (friends) => {
+                        console.log(friends);
+                        setFriends(friends);
+                    })
+                })
+            }
+        })
+    }, [])
 
     return (
-        <>
-            <SendToUsers openModal={open} handleSubmit={handleSubmit} refContext={wrapperRef}></SendToUsers>
+        <>  {loggedIn ? 
+                <SendToUsers openModal={open} handleSubmit={handleSubmit} refContext={wrapperRef} friends = {friends}></SendToUsers>
+                :
+                <Login modalControl={open} refContext={wrapperRef}></Login>
+            }
+            
             <Snackbar open={snack} autoHideDuration={4000} onClose={snackbarClose} message={snackError ? "Error - ensure you are signed in." : "Success"} anchorOrigin={{vertical: "bottom", horizontal: "left"}}></Snackbar>
         </>
     )

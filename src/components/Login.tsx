@@ -1,105 +1,123 @@
-import React, {useState} from 'react';
-import '../assets/tailwind.css'
-import {TextField, Button,Typography, Grid, ThemeProvider, createTheme} from '@mui/material';
-import axios from 'axios';
-import { createRoot } from 'react-dom/client'
+import React, {useRef, useEffect} from 'react';
+import {TextField, Button,Typography, InputAdornment, Grid, Avatar, Dialog, Link} from '@mui/material';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import PersonIcon from '@mui/icons-material/Person';
 
-const theme = createTheme({
-    components:{
-        MuiTypography: {
-            variants:[
-                {
-                    props: {
-                        variant: "h2"
-                    },
-                    style: {
-                        fontSize: 11
-                    }
-                }
-            ]
+interface modalOverride {
+    modalControl?: boolean
+    refContext?: any
+}
+
+function loginBoundedOutsideAlerter(ref, setModal) {
+    console.log("login bound outsider alerter");
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (ref.current && !ref.current.contains(event.target)) {
+                // eslint-disable-next-line no-restricted-globals
+                setModal(false)
+            }
         }
-    }
-  })
-  
-const Login = () => {
-        const [email, setEmail] = React.useState("");
-        const [password, setPassword] = React.useState("");
-        axios.defaults.baseURL = "http://localhost:5001/twizzly-application/us-central1/api"
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside)
+      }
+    }, [ref])
+  }
 
-        const handleSubmit = async(event) => {
-            try{
-                console.log("Submitting");
-                event.preventDefault();
-                let userData = {
+
+
+
+const Login = ({modalControl, refContext}: modalOverride) => {
+    const [email, setEmail] = React.useState("");
+    const loginWrapperRef = useRef(null);
+    const [password, setPassword] = React.useState("");
+    const [modal, setModal] = React.useState(true);
+    const [error, setError] = React.useState("");
+    (modalControl === null ) && loginBoundedOutsideAlerter(loginWrapperRef, setModal);
+    (modalControl === null ) ? console.log("Coming in through click") : console.log("Coming in through modal");
+
+    const handleSubmit = () => {
+        try{
+            const message = {
+                id: "SaveCredentialsOnLogin",
+                credentials: {
                     email: email,
                     password: password
                 }
-
-                let response = await axios.post('/login', userData);
-                const message = {
-                    id: "SaveCredentials",
-                    credentials: {
-                        email: userData.email,
-                        password: userData.password
+            }
+            
+            chrome.runtime.sendMessage(message, {}, (tokenIsSet) => {
+                if(tokenIsSet){
+                    if(modalControl === null){
+                        setModal(false);
                     }
-                }
-                console.log(response);
-                
-                
-                chrome.runtime.sendMessage(message, (chromeResponse) => {
-                    console.log(chromeResponse)
-                });
-                chrome.action.setBadgeText({
-                    text: "ON",
-                });;
-                
-                //May not Need This.
-                let token = response.data.token; 
-                const TAppIdToken = `Bearer ${token}`;
-                localStorage.setItem('TAppIdToken', TAppIdToken)
-                axios.defaults.headers.common['Authorization'] = TAppIdToken;
-            }
-            catch(error)
-            {
-                console.log(error.response)
-            }
+                    setError("");
+                }else{
+                    setError("Bad email or password, try again!")
+                }     
+            });
         }
+        catch(error)
+        {
+            console.log(error.response)
+        }
+    }
+
+    const paperStyle={padding: '20px', width:'300px', margin:"20px auto"}
+    const avatarStyle={backgroundColor:'#1bbd7e'}
+    const btnstyle={margin:'8px 0'}
 
 
-    return(
-        <ThemeProvider theme={theme}>
-            <Grid container >
-                <Grid item sm></Grid>
-                <Grid item sm>
-                <Typography variant="h2" >
-                    Boobs
-                </Typography>
-                <form noValidate onSubmit={handleSubmit}>
-                    <TextField
-                    id="email"
-                    name="email"
-                    type="email"
-                    label="Email"
-                    value={email}
-                    onChange={(e) => (setEmail(e.target.value), console.log("YA"))}
-                    fullWidth
-                    ></TextField>
-                    <TextField
-                    id="password"
-                    name="password"
-                    type="password"
-                    label="Password"
-                    value={password}
-                    onChange={(e) => {setPassword(e.target.value)}}
-                    fullWidth
-                    ></TextField>
-                    <Button type="submit" variant="contained" color="primary" />
-                </form>
-                </Grid>
-                <Grid item sm></Grid>
+return(
+    <Dialog open={(modalControl === null) ? modal : modalControl}>
+    <div ref={(refContext === null) ? loginWrapperRef : refContext}>
+        <Grid sx={paperStyle}>
+            <Grid container direction="column" justifyContent="center" alignItems="center">
+                 <Avatar sx={avatarStyle}><LockOutlinedIcon/></Avatar>
+                <h2>Sign In</h2>
             </Grid>
-        </ThemeProvider>
-        );
+            <TextField 
+            value={email}
+            onChange={(e) => (setEmail(e.target.value))}
+            error={error.length > 0}
+            label='Email' placeholder='Enter email' sx={btnstyle} fullWidth required
+            InputProps={{
+                startAdornment: (
+                    <InputAdornment position="start">
+                        <PersonIcon/> 
+                    </InputAdornment>
+                )
+            }}
+            />
+            <TextField label='Password' placeholder='Enter password' sx={btnstyle} type='password' fullWidth required
+            value={password}
+            onChange={(e) => (setPassword(e.target.value))}
+            error={error.length > 0}
+            helperText={error.length > 0 ? error : ""}
+            InputProps={{
+                startAdornment: (
+                    <InputAdornment position="start">
+                        <LockOutlinedIcon/> 
+                    </InputAdornment>
+                )
+            }}
+            />
+            <Button onClick={handleSubmit} type='submit' color='primary' variant="contained" sx={btnstyle} fullWidth>Sign in</Button>
+            <Typography >
+                 <Link href="#" >
+                    Forgot password?
+            </Link>
+            </Typography>
+            <Typography > Do you have an account? 
+                 <Link href="#" >
+                    Sign Up 
+            </Link>
+            </Typography>
+        </Grid>
+    </div>
+    </Dialog>
+    );
 }
+
 
 export default Login; 

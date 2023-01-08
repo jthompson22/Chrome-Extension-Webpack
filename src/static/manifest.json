@@ -4,7 +4,6 @@
     "description": "Agnostic Sharing",
     "version": "1.0.0",
     "action" : {
-        "default_popup": "popup.html",
         "default_title": "React Boilerplate",
         "default_icon" : "icon.png"
     },
@@ -21,11 +20,11 @@
     "content_scripts": [
         {
             "matches": ["<all_urls>"],
-            "js": ["contentScript.js", "AppWrapper.js"],
+            "js": ["AppWrapper.js"],
             "type": "module"
         }
     ],
-    "permissions": ["activeTab", "scripting", "storage"],
+    "permissions": ["activeTab", "scripting", "storage", "alarms"],
     "commands": {
         "toggle_search":{
             "suggested_key":{

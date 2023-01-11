@@ -1,7 +1,8 @@
 import React, {useState} from 'react'
-import {TextField, DialogContent, DialogTitle, InputAdornment, Button, Dialog, List, ListItem, ListItemButton, ListItemText} from '@mui/material';
+import {TextField, DialogContent, DialogTitle, InputAdornment, Button, Dialog, ListItemButton, MenuList, MenuItem, ListItemText} from '@mui/material';
 import SendTwoToneIcon from '@mui/icons-material/SendTwoTone';
 import SearchTwoToneIcon from '@mui/icons-material/SearchTwoTone';
+import FormatAlignLeftTwoToneIcon from '@mui/icons-material/FormatAlignLeftTwoTone';
 
 
 const SendToUsers = ({handleSubmit, openModal, refContext, friends} : any) => {
@@ -12,8 +13,9 @@ const SendToUsers = ({handleSubmit, openModal, refContext, friends} : any) => {
 
     const dialogStyle = {
         display: "flex",
-        flexDirection: "column"
+        flexDirection: "column",
       };
+
     const textFieldStyle = {
         border: "none",
         "& input#standard-basic":{
@@ -23,11 +25,18 @@ const SendToUsers = ({handleSubmit, openModal, refContext, friends} : any) => {
         "& textarea#standard-basic":{
             border: "none",
             boxShadow: "none",
+            marginTop: '15px'
         },
         "& div#SendAdornment":{
-            position: 'relative',
-            top: '42px',
+            marginTop: '15px',
             opacity: '40%',
+        },
+        "& label#SendAdornment":{
+            marginTop: '15px',
+            opacity: '40%',
+        },
+        "& div#BodyAdornment":{
+            marginTop: '15px',
         }
       };
 
@@ -54,10 +63,12 @@ const SendToUsers = ({handleSubmit, openModal, refContext, friends} : any) => {
     }
 
     return (
-        <Dialog open={openModal} sx={{dialogStyle}}>
+        <Dialog open={openModal} sx={{dialogStyle}}
+            PaperProps={{sx:{overflowY: 'unset'}}}
+        >
             <div ref={refContext}>
-                <DialogTitle>Sharing</DialogTitle>
-                <DialogContent >
+                <DialogTitle>Share The Web</DialogTitle>
+                <DialogContent>
                     <TextField sx={textFieldStyle}
                     autoFocus
                     margin="dense"
@@ -77,39 +88,45 @@ const SendToUsers = ({handleSubmit, openModal, refContext, friends} : any) => {
                     />
                     {
                         (to !== "" && filterList.length > 0) && 
-                        <List sx={listStyles}>
-                            {
-                                filterList.map(friend => {
-                                        console.log(friend)
-                                        return (
-                                        <ListItem id={friend} key={friend}> 
-                                            <ListItemButton onClick={() => handleListItemClick(friend)}>
-                                                <ListItemText> 
-                                                    {friend}
-                                                </ListItemText>
-                                            </ListItemButton>
-                                        </ListItem>)
-                                })
-                            }
-                        </List>
+                            <MenuList sx={listStyles}>
+                                {
+                                    filterList.map(friend => {
+                                            console.log(friend)
+                                            return (
+                                            <MenuItem id={friend} key={friend}> 
+                                                <ListItemButton onClick={() => handleListItemClick(friend)}>
+                                                    <ListItemText> 
+                                                        {friend}
+                                                    </ListItemText>
+                                                </ListItemButton>
+                                            </MenuItem>)
+                                    })
+                                }
+                            </MenuList>
                     }
-                    <TextField sx={textFieldStyle}
-                        multiline
-                        id="standard-basic"
-                        variant="standard"
-                        placeholder= "... P.S. I love you."
-                        fullWidth
-                        rows={5}
-                        value={body}
-                        onChange={(e) => (setBody(e.target.value))}
-                        InputProps={{
-                            endAdornment: (
-                                <InputAdornment id="SendAdornment" position="end">
-                                    <Button color="primary" onClick={() =>  (handleSubmit(to, body), setBody(""), setTo(""))} endIcon={<SendTwoToneIcon />}> SEND </Button>
-                                </InputAdornment>
-                            )
-                        }}
-                    />
+                        <TextField sx={textFieldStyle}
+                            multiline
+                            id="standard-basic"
+                            variant="standard"
+                            placeholder= "... P.S. I love you."
+                            label="Body: ..."
+                            InputLabelProps={{sx:{marginTop: '10px'}}}
+                            fullWidth
+                            value={body}
+                            onChange={(e) => (setBody(e.target.value))}
+                            InputProps={{
+                                endAdornment: (
+                                    <InputAdornment id="SendAdornment" position="end">
+                                        <Button color="primary" onClick={() =>  (handleSubmit(to, body), setBody(""), setTo(""))} endIcon={<SendTwoToneIcon />}> SEND </Button>
+                                    </InputAdornment>
+                                ),
+                                startAdornment: (
+                                    <InputAdornment id="BodyAdornment" position="start">
+                                        <FormatAlignLeftTwoToneIcon/> 
+                                    </InputAdornment>
+                                )
+                            }}
+                        />
                 </DialogContent>
             </div>
         </Dialog>

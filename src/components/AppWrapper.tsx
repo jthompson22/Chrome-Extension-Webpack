@@ -24,6 +24,13 @@ function useOutsideAlerter(ref, setOpen) {
     }, [ref])
   }
 
+function getBearer(){
+    console.log("Executing get Bearer");
+    useEffect(()=>{
+
+    }, [])
+}
+
 const AppWrapper = () => {
     const [open, setOpen] = useState(false)
     const wrapperRef = useRef(null)
@@ -78,7 +85,22 @@ const AppWrapper = () => {
         chrome.runtime.sendMessage({id: "LoadBearerToken"}, {}, (token) => {
             //We know we're logged in, go get friends;
             console.log("Token", token)
+            if(window.location.href === 'http://localhost:3000'){
+                chrome.runtime.sendMessage({id: "LoginToHomePage"}, {}, (bearer) =>{
+                    console.log("Token", bearer);
+                    localStorage.setItem('TAppIdToken', bearer);
+                })
+            }
             if(token){
+                if(window.location.href === 'http://localhost:3000/login'){
+                    chrome.runtime.sendMessage({id: "LoginToHomePage"}, {}, (bearer) =>{
+                        console.log("Token", bearer);
+                        localStorage.setItem('TAppIdToken', bearer);
+                        window.location.reload(); 
+                    })
+                }
+
+                //Set background.js login details
                 setLoggedIn(true);
                 chrome.runtime.sendMessage({id: "GetFriends"}, {}, (friends) => {
                     console.log(friends);

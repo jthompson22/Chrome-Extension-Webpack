@@ -20,6 +20,9 @@ async function postSharedLink(message){
         const response = await axiosInstance.post('/sharelink', message);
         return true; 
     }catch(error){
+        if(error.data.error === "Unauthorized"){
+
+        }
         console.log(error.response.data)
         return false; 
     }
@@ -36,38 +39,44 @@ async function SetFriends(){
 async function GetAndSetNotifications(){
     try{
         const response = await axiosInstance.get('/getNotifications');
-        return String(response.data.notifications.length); 
+        console.log("Got Notifications from API");
+        console.log(response.data.length);
+        console.log(response.data);
+        return response.data.length; 
     }catch(error){
-        console.log(error.response.data)
+        console.log(error.response)
     }
 }
 
 //AUTHORIZATION USER ACTIONS
-function setAuthorizationHeader(token){;
+function setAuthorizationHeader(token){
+    console.log("Setting auth header");
     const TAppIdToken = `Bearer ${token}`;
     axiosInstance.defaults.headers.common['Authorization'] = TAppIdToken;//In this instance use Axios global and set the header;
 };
 
 async function GetCredentialsAdmin(){
     try{
+        console.log("Getting credentials");
         //background has not gone idle
-        if(axiosInstance.defaults.headers.common['Authorization']){
-            return true; 
-        }else{
-            const TAppIdToken = (await chrome.storage.local.get(["TAppIdToken"])).TAppIdToken;
-            if(TAppIdToken){
-                let decoded: any = jwtDecode(TAppIdToken)
-                if(decoded.exp *1000 < Date.now()){
-                    let token = await getLoginBearerToken();
-                    return token ? (setAuthorizationHeader(token), true) : false
-                }else{
-                    //App token is good
-                    return true
-                }
-            }else{
+        const TAppIdToken = (await chrome.storage.local.get(["TAppIdToken"])).TAppIdToken;
+        if(TAppIdToken){
+            console.log("Token load from local storage");
+            let decoded: any = jwtDecode(TAppIdToken)
+            if(decoded.exp *1000 < Date.now()){
                 let token = await getLoginBearerToken();
-                return token ? (setAuthorizationHeader(token), true) : false
+                if(token) {setAuthorizationHeader(token); return true;}
+                return false; 
+            }else{
+                //App token is good
+                setAuthorizationHeader(TAppIdToken);
+                return true
             }
+        }else{
+            console.log("Getting token from API")
+            let token = await getLoginBearerToken();
+            if(token) {setAuthorizationHeader(token); return true;}
+            return false; 
         }
     }catch(error){
         console.log(error);
@@ -98,6 +107,7 @@ async function getLoginBearerToken(){
 async function SetBadgeText(on){
     if(on==="ON"){
         chrome.action.setBadgeText({text: ""}, ()=>{
+            console.log("Notifications alarm set.")
             chrome.alarms.create(
                 "GetNotifications",
                 {periodInMinutes: 2, when: Date.now()}
@@ -121,7 +131,8 @@ chrome.action.onClicked.addListener(async (tab) => {
             });
     }else{
         chrome.tabs.update({url: "http://localhost:3000/"});
-    } 
+    }
+
 });
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
@@ -170,17 +181,24 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         case "SetupLoginListener":
             console.log("Not logged in setting up login listener...")
             eventEmitter.on('LoggedIn', () => sendResponse())
-            return true; 
+            return true;
+        case "LoginToHomePage":
+            sendResponse(axiosInstance.defaults.headers.common['Authorization'])
+            return true;  
         default:
             sendResponse("Front the background Script");   
     }
 })
 
 chrome.alarms.onAlarm.addListener(async (alarm)=>{
+    console.log("Getting and setting notifications!")
     if(alarm.name === "GetNotifications"){
         let notifications  = await GetAndSetNotifications()
-        if(notifications){
-            chrome.action.setBadgeText({text: notifications})
+        console.log("The number of notification is:", notifications);
+        if(notifications > 0){
+            chrome.action.setBadgeText({text: String(notifications)})
+        }else{
+            chrome.action.setBadgeText({text: ""})
         }
     }
 })
@@ -189,8 +207,16 @@ chrome.runtime.onInstalled.addListener(async (tab) => {
     // Retrieve the action badge to check if the extension is 'ON' or 'OFF'
     const email = (await chrome.storage.local.get(["Email"])).Email;
     const password = (await chrome.storage.local.get(["Password"])).Password;
+    console.log(email)
+    console.log(password)
     if(!email && !password){
         SetBadgeText("OFF"); 
+    }else{
+        console.log("ON");
+        let tokenIsSet = await GetCredentialsAdmin();
+        console.log("Credentials loaded on install...")
+        tokenIsSet ? SetBadgeText("ON") : console.log("On install error");
+        
     }
 });
 

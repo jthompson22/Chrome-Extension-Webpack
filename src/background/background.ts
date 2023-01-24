@@ -3,10 +3,19 @@ import fetchAdaptor from '@vespaiach/axios-fetch-adapter';
 import jwtDecode from 'jwt-decode'; 
 var events = require('events');
 var eventEmitter = new events.EventEmitter();
-
+var baseUrl; 
+chrome.management.get(chrome.runtime.id, function (extensionInfo) {
+    if (extensionInfo.installType === 'development') {
+      console.log("DevelopmentMode");
+      baseUrl = 'http://localhost:5001/twizzly-application/us-central1/api'
+    }else{
+        console.log("Production Mode");
+        baseUrl="https://us-central1-twizzly-application.cloudfunctions.net/api"
+    }
+});
 //SETUP
 const axiosInstance = axios.create({
-    baseURL: 'http://localhost:5001/twizzly-application/us-central1/api',
+    baseURL: baseUrl,
     adapter: fetchAdaptor
 })
 let friends = [];

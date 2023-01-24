@@ -24,7 +24,7 @@
             "type": "module"
         }
     ],
-    "permissions": ["activeTab", "scripting", "storage", "alarms"],
+    "permissions": ["activeTab", "scripting", "storage", "alarms", "management"],
     "commands": {
         "toggle_search":{
             "suggested_key":{

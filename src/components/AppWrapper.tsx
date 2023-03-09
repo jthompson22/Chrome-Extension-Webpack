@@ -5,7 +5,7 @@ import { createRoot } from 'react-dom/client'
 //import jwtDecode from "jwt-decode";
 import SendToUsers from './SendToUsers';
 import {Snackbar} from '@mui/material';
-
+import { CLIENT_ROOT } from '../environment';
 
 function useOutsideAlerter(ref, setOpen) {
     console.log("useOutsideAlerter");
@@ -48,9 +48,11 @@ const AppWrapper = () => {
                 id: "PostSharedLink",
                 body:{
                     recipientHandle: to,
-                    messageBody: body, 
+                    messageBody: body,
+                    url: window.location.href,
                 }
         }
+        console.log(message);
         setOpen(false);
         chrome.runtime.sendMessage(message, (postResponse) => {
             if(!postResponse){
@@ -68,7 +70,7 @@ const AppWrapper = () => {
         console.log("handleKeyBoardShortcut")
         function handleKeyBoardShortcut(event) {
             if(open === false){
-                if(event.altKey && event.key == 's'){
+                if(event.altKey && event.key == 'c'){
                     console.log("TRUE");
                     setOpen(true);
                 }
@@ -85,14 +87,14 @@ const AppWrapper = () => {
         chrome.runtime.sendMessage({id: "LoadBearerToken"}, {}, (token) => {
             //We know we're logged in, go get friends;
             console.log("Token", token)
-            if(window.location.href === 'http://localhost:3000'){
+            if(window.location.href === `${CLIENT_ROOT}`){
                 chrome.runtime.sendMessage({id: "LoginToHomePage"}, {}, (bearer) =>{
                     console.log("Token", bearer);
                     localStorage.setItem('TAppIdToken', bearer);
                 })
             }
             if(token){
-                if(window.location.href === 'http://localhost:3000/login'){
+                if(window.location.href === `${CLIENT_ROOT}/login`){
                     chrome.runtime.sendMessage({id: "LoginToHomePage"}, {}, (bearer) =>{
                         console.log("Token", bearer);
                         localStorage.setItem('TAppIdToken', bearer);

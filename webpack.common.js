@@ -2,7 +2,7 @@ const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
 const HtmlPlugin = require('html-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
-const autoprefixer = require('autoprefixer')
+
 
 module.exports = {
     entry: {
@@ -29,15 +29,6 @@ module.exports = {
                           importLoaders: 1,
                         },
                     },
-                //    {
-                //     loader: 'postcss-loader', // postcss loader needed for tailwindcss
-                //     options: {
-                //       postcssOptions: {
-                //         ident: 'postcss',
-                //         plugins: [tailwindcss, autoprefixer],
-                //       },
-                //     },
-                // },
               ],
             },
             {
@@ -47,6 +38,18 @@ module.exports = {
         ]
     },
     "plugins": [
+        // new Dotenv({
+        //     path: `.env${env.file ? `.${env.file}` : ''}`
+        //   }),
+        // new DefineEnvsPlugin(
+        //     [
+        //         'API_ROOT',
+        //         'CLIENT_ROOT',
+        //         'SIGN_UP',
+        //         'LOGIN'
+        //     ],
+        //     'GLOBAL'
+        // ),
         new CleanWebpackPlugin({
             cleanStaleWebpackAssets: false
         }),
@@ -74,6 +77,7 @@ module.exports = {
         // }
         runtimeChunk: false
     }
+    
 }
 
 function getHtmlPlugins(chunks){

@@ -5,6 +5,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
+    "watch:local": "webpack --env local --watch --progress --config webpack.dev.js",
     "watch": "webpack --watch --progress --config webpack.dev.js",
     "build": "webpack --watch --progress --config webpack.prod.js"
   },
@@ -33,6 +34,8 @@
     "@vespaiach/axios-fetch-adapter": "^0.3.1",
     "autoprefixer": "^10.4.7",
     "axios": "0.26.0",
-    "jwt-decode": "^3.1.2"
+    "dotenv-webpack": "^8.0.1",
+    "jwt-decode": "^3.1.2",
+    "webpack-define-envs-plugin": "^0.2.0"
   }
 }

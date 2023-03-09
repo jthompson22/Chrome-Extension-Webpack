@@ -3,16 +3,9 @@ import fetchAdaptor from '@vespaiach/axios-fetch-adapter';
 import jwtDecode from 'jwt-decode'; 
 var events = require('events');
 var eventEmitter = new events.EventEmitter();
-var baseUrl; 
-chrome.management.get(chrome.runtime.id, function (extensionInfo) {
-    if (extensionInfo.installType === 'development') {
-      console.log("DevelopmentMode");
-      baseUrl = 'http://localhost:5001/twizzly-application/us-central1/api'
-    }else{
-        console.log("Production Mode");
-        baseUrl="https://us-central1-twizzly-application.cloudfunctions.net/api"
-    }
-});
+import {API_ROOT, CLIENT_ROOT} from '../environment';
+const baseUrl = API_ROOT; 
+
 //SETUP
 const axiosInstance = axios.create({
     baseURL: baseUrl,
@@ -30,7 +23,7 @@ async function postSharedLink(message){
         return true; 
     }catch(error){
         if(error.data.error === "Unauthorized"){
-
+            console.log(error);
         }
         console.log(error.response.data)
         return false; 
@@ -99,6 +92,7 @@ async function getLoginBearerToken(){
     const email = (await chrome.storage.local.get(["Email"])).Email;
     const password = (await chrome.storage.local.get(["Password"])).Password;
     if(email && password){
+        console.log(baseUrl);
         const response = await axiosInstance.post('/login', {"email": email, "password": password})
         await chrome.storage.local.set({"TAppIdToken": response.data.token});
         return response.data.token;
@@ -139,7 +133,8 @@ chrome.action.onClicked.addListener(async (tab) => {
             target: { tabId: tab.id },
             });
     }else{
-        chrome.tabs.update({url: "http://localhost:3000/"});
+        console.log(CLIENT_ROOT);
+        chrome.tabs.update({url: CLIENT_ROOT});
     }
 
 });
@@ -170,7 +165,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             return true
         case "PostSharedLink":
             console.log("Posting")
-            const messageBody = {...msg.body, url: sender.url}
+            const messageBody = {...msg.body}
+            console.log(messageBody);
             postSharedLink(messageBody).then((success)=> {
                 sendResponse(success);
             })

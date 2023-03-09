@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "Share The Web",
     "description": "Agnostic Sharing",
-    "version": "1.0.0",
+    "version": "1.7.9",
     "action" : {
         "default_title": "React Boilerplate",
         "default_icon" : "icon.png"
@@ -24,7 +24,7 @@
             "type": "module"
         }
     ],
-    "permissions": ["activeTab", "scripting", "storage", "alarms", "management"],
+    "permissions": ["activeTab", "scripting", "storage", "alarms"],
     "commands": {
         "toggle_search":{
             "suggested_key":{

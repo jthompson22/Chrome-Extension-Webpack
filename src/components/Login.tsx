@@ -2,6 +2,7 @@ import React, {useRef, useEffect} from 'react';
 import {TextField, Button,Typography, InputAdornment, Grid, Avatar, Dialog, Link} from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import PersonIcon from '@mui/icons-material/Person';
+import { LOGIN, SIGN_UP } from '../environment'
 
 interface modalOverride {
     modalControl?: boolean
@@ -66,6 +67,7 @@ const Login = ({modalControl, refContext}: modalOverride) => {
     const paperStyle={padding: '20px', width:'300px', margin:"20px auto"}
     const avatarStyle={backgroundColor:'#1bbd7e'}
     const btnstyle={margin:'8px 0'}
+    const linkStyle={cursor: 'pointer'}
 
 
 return(
@@ -104,12 +106,12 @@ return(
             />
             <Button onClick={handleSubmit} type='submit' color='primary' variant="contained" sx={btnstyle} fullWidth>Sign in</Button>
             <Typography >
-                 <Link href="#" >
+                 <Link href={SIGN_UP} sx={linkStyle}>
                     Forgot password?
             </Link>
             </Typography>
             <Typography > Do you have an account? 
-                 <Link href="#" >
+                 <Link href={LOGIN} sx={linkStyle}>
                     Sign Up 
             </Link>
             </Typography>
